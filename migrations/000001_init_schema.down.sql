@@ -1,0 +1,5 @@
+DROP TABLE subrscriptions IF EXISTS;
+
+DROP TABLE product IF EXISTS;
+
+DROP TABLE users IF EXISTS;
