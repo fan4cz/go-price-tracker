@@ -11,9 +11,9 @@ CREATE TABLE products (
     last_checked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE subrscriptions (
+CREATE TABLE subscriptions (
     user_id Bigint REFERENCES users(tg_bot_id) ON DELETE CASCADE,
-    product_id INT REFERENCES product(id) ON DELETE CASCADE,
+    product_id INT REFERENCES products(id) ON DELETE CASCADE,
     target_price DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY(user_id, product_id)
 );

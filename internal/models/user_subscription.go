@@ -2,8 +2,7 @@ package models
 
 import "github.com/shopspring/decimal"
 
-type Subscription struct {
-	UserID uint `db:"user_id"`
-	ProductID uint `db:"product_id"`
+type UserSubscription struct {
+	Product
 	TargetPrice decimal.Decimal `db:"target_price"`
 }
