@@ -38,7 +38,7 @@ func (s trackerService) TrackProduct(ctx context.Context, userID int64, rawURL s
 		return err
 	}
 
-	if err = s.repo.CreateUser(ctx, uint64(userID)); err != nil {
+	if err = s.repo.CreateUser(ctx, userID); err != nil {
 		return err
 	}
 

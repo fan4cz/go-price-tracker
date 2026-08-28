@@ -15,7 +15,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) CreateUser(ctx context.Context, tgBotID uint64) error {
+func (r *Repository) CreateUser(ctx context.Context, tgBotID int64) error {
 	query := `
 		INSERT INTO users (tg_bot_id)
 		VALUES ($1)

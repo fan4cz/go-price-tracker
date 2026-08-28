@@ -17,3 +17,5 @@ CREATE TABLE subscriptions (
     target_price DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY(user_id, product_id)
 );
+
+CREATE INDEX idx_subscriptions_product_id ON subscriptions(product_id);

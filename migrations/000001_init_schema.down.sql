@@ -1,3 +1,4 @@
+DROP INDEX IF EXISTS idx_subscriptions_product_id;
 DROP TABLE IF EXISTS subscriptions CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
