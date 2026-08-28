@@ -25,7 +25,7 @@ func (r *Repository) CreateUser(ctx context.Context, tgBotID uint64) error {
 	return err
 }
 
-func (r *Repository) UpsertProduct(ctx context.Context, p models.Product) (uint64, error) {
+func (r *Repository) UpsertProduct(ctx context.Context, p models.Product) (int, error) {
 	query := `
 		INSERT INTO products (url, domain, current_price)
 		VALUES ($1, $2, $3)
@@ -40,7 +40,7 @@ func (r *Repository) UpsertProduct(ctx context.Context, p models.Product) (uint6
 	if err != nil {
 		return 0, err
 	}
-	return uint64(id), nil
+	return id, nil
 }
 
 func (r *Repository) AddSubscription(ctx context.Context, sub models.Subscription) error {
@@ -54,7 +54,7 @@ func (r *Repository) AddSubscription(ctx context.Context, sub models.Subscriptio
 	return err
 }
 
-func (r *Repository) GetUserSubscriptions(ctx context.Context, userID uint64) ([]models.UserSubscription, error) {
+func (r *Repository) GetUserSubscriptions(ctx context.Context, userID int64) ([]models.UserSubscription, error) {
 	query := `
 		SELECT p.id, p.url, p.domain, p.current_price, p.last_checked_at, s.target_price
 		FROM products p
