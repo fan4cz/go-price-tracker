@@ -12,6 +12,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+var priceRegexp = regexp.MustCompile(`[^\d.,]`)
+
 type Scraper interface {
 	FetchPrice(ctx context.Context, productURL, domain string) (decimal.Decimal, error)
 }
@@ -72,8 +74,7 @@ func (s *webScraper) FetchPrice(ctx context.Context, productURL, domain string) 
 }
 
 func cleanPrice(rawPrice string) (decimal.Decimal, error) {
-	re := regexp.MustCompile(`[^\d.,]`)
-	cleanStr := re.ReplaceAllString(rawPrice, "")
+	cleanStr := priceRegexp.ReplaceAllString(rawPrice, "")
 
 	cleanStr = strings.ReplaceAll(cleanStr, ",", ".")
 

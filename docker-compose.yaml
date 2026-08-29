@@ -47,6 +47,22 @@ services:
     networks:
       - tracker_network
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    container_name: tracker_scheduler
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://tracker_user:tracker_password@postgres:5432/price_tracker?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tracker_network
+
 volumes:
   pgdata:
 

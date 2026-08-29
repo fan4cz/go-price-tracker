@@ -151,9 +151,9 @@ func (b *Bot) handleAdd(msg *tgbotapi.Message) {
 		return
 	}
 	reply := fmt.Sprintf(
-		"✅ *Товар успешно добавлен!*\n\nТекущая цена: `%s`\nЦелевая цена: `%s`\n\nЯ пришлю уведомление, когда цена упадет!",
-		curPrice.StringFixed(2),
-		targetPriceStr,
+		"✅ <b>Товар успешно добавлен!</b>\n\nТекущая цена: <code>%s</code>\nЦелевая цена: <code>%s</code>\n\nЯ пришлю уведомление, когда цена упадет!",
+		html.EscapeString(curPrice.StringFixed(2)),
+		html.EscapeString(targetPriceStr),
 	)
 	b.sendReply(msg.Chat.ID, reply)
 }

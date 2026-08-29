@@ -58,6 +58,9 @@ func (s trackerService) TrackProduct(ctx context.Context, userID int64, rawURL s
 	}
 
 	productID, err := s.repo.UpsertProduct(ctx, product)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("не удалось сохранить товар: %w", err)
+	}
 
 	sub := models.Subscription{
 		UserID:      userID,

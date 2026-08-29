@@ -2,7 +2,9 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"go-price-tracker/internal/models"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -68,4 +70,43 @@ func (r *Repository) GetUserSubscriptions(ctx context.Context, userID int64) ([]
 		return nil, err
 	}
 	return subs, nil
+}
+
+func (r *Repository) GetOutdatedProducts(ctx context.Context, interval time.Duration, limit int) ([]models.Product, error) {
+	query := `
+			SELECT id, url, domain, current_price, last_checked_at
+			FROM products
+			WHERE last_checked_at IS NULL
+			   OR last_checked_at < NOW() - $1::interval
+			ORDER BY last_checked_at ASC NULLS FIRST
+			LIMIT $2`
+
+	intervalParam := fmt.Sprintf("%d seconds", int(interval.Seconds()))
+
+	var products []models.Product
+	err := r.db.SelectContext(ctx, &products, query, intervalParam, limit)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка выборки устаревших товаров: %w", err)
+	}
+
+	return products, nil
+}
+
+func (r *Repository) MarkProductsAsChecked(ctx context.Context, productIDs []int) error {
+	if len(productIDs) == 0 {
+		return nil
+	}
+
+	query, args, err := sqlx.In(`
+		UPDATE products
+		SET last_checked_at = NOW()
+		WHERE id IN (?)
+	`, productIDs)
+	if err != nil {
+		return fmt.Errorf("ошибка формирования IN-запроса: %w", err)
+	}
+
+	query = r.db.Rebind(query)
+	_, err = r.db.ExecContext(ctx, query, args...)
+	return err
 }
