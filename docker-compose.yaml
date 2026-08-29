@@ -4,13 +4,52 @@ services:
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_password
-      POSTGRES_DB: postgres_db
+      POSTGRES_USER: ${POSTGRES_USER:-tracker_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tracker_password}
+      POSTGRES_DB: ${POSTGRES_DB:-price_tracker}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - tracker_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tracker_user} -d ${POSTGRES_DB:-price_tracker}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+
+  adminer:
+    image: adminer
+    container_name: tracker_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - tracker_network
+
+
+  bot:
+    build: .
+    container_name: go-tracker-bot
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+      - DATABASE_URL=postgres://tracker_user:tracker_password@postgres:5432/price_tracker?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tracker_network
 
 volumes:
   pgdata:
+
+networks:
+  tracker_network:
+    driver: bridge

@@ -36,8 +36,8 @@ type KafkaConfig struct {
 func MustLoad() *Config {
 	var cfg Config
 
-	if _, err := os.Stat(".env"); err != nil {
-		if err = cleanenv.ReadConfig(".env", &cfg); err == nil {
+	if _, err := os.Stat(".env"); err == nil {
+		if err := cleanenv.ReadConfig(".env", &cfg); err != nil {
 			log.Fatalf("Ошибка чтения .env файла: %s", err)
 		}
 	} else {
