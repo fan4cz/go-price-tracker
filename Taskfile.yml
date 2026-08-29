@@ -1,0 +1,90 @@
+# https://taskfile.dev
+version: '3'
+
+vars:
+  BIN_DIR: bin
+  BOT_BIN: '{{.BIN_DIR}}/bot'
+  DB_USER: tracker_user
+  DB_NAME: price_tracker
+  DB_CONTAINER: postgres
+
+tasks:
+  default:
+    desc: Показать список доступных команд
+    cmds:
+      - task --list
+
+  # --- Локальная разработка ---
+  build:
+    desc: Собрать бинарный файл бота
+    cmds:
+      - go build -o {{.BOT_BIN}} ./cmd/bot
+
+  run:
+    desc: Запустить бота локально
+    cmds:
+      - go run ./cmd/bot
+
+  tidy:
+    desc: Обновить и очистить зависимости Go
+    cmds:
+      - go mod tidy
+
+  vet:
+    desc: Запустить статический анализ go vet
+    cmds:
+      - go vet ./...
+
+  test:
+    desc: Запустить тесты
+    cmds:
+      - go test -v -race ./...
+
+  # --- Docker Compose ---
+  up:
+    desc: Запустить все сервисы в фоне
+    cmds:
+      - docker compose up -d
+
+  up:build:
+    desc: Пересобрать образы и запустить все сервисы
+    cmds:
+      - docker compose up -d --build
+
+  down:
+    desc: Остановить все контейнеры
+    cmds:
+      - docker compose down
+
+  down:v:
+    desc: Остановить контейнеры и удалить тома (volumes) с данными
+    cmds:
+      - docker compose down -v
+
+  restart:
+    desc: Перезапустить сервисы
+    cmds:
+      - docker compose restart
+
+  logs:
+    desc: Просмотр логов всех контейнеров в реальном времени
+    cmds:
+      - docker compose logs -f
+
+  logs:bot:
+    desc: Просмотр логов контейнера бота
+    cmds:
+      - docker compose logs -f bot
+
+  ps:
+    desc: Список запущенных контейнеров
+    cmds:
+      - docker compose ps
+
+  # --- База данных ---
+  db:psql:
+    desc: Открыть интерактивную консоль psql в контейнере Postgres
+    interactive: true
+    cmds:
+      - docker exec -it {{.DB_CONTAINER}} psql -U {{.DB_USER}} -d {{.DB_NAME}}
+

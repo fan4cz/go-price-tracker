@@ -144,13 +144,17 @@ func (b *Bot) handleAdd(msg *tgbotapi.Message) {
 	if msg.From == nil {
 		return
 	}
-	err := b.service.TrackProduct(ctx, msg.From.ID, rawURL, targetPriceStr)
+	curPrice, err := b.service.TrackProduct(ctx, msg.From.ID, rawURL, targetPriceStr)
 	if err != nil {
 		slog.Error("Ошибка добавления товара", "error", err, "user_id", msg.From.ID)
 		b.sendReply(msg.Chat.ID, fmt.Sprintf("❌ Не удалось добавить товар: %s", html.EscapeString(err.Error())))
 		return
 	}
-	reply := fmt.Sprintf("✅ <b>Товар успешно добавлен!</b>\nЦелевая цена: <code>%s</code>", html.EscapeString(targetPriceStr))
+	reply := fmt.Sprintf(
+		"✅ *Товар успешно добавлен!*\n\nТекущая цена: `%s`\nЦелевая цена: `%s`\n\nЯ пришлю уведомление, когда цена упадет!",
+		curPrice.StringFixed(2),
+		targetPriceStr,
+	)
 	b.sendReply(msg.Chat.ID, reply)
 }
 

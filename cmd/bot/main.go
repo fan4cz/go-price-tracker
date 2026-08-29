@@ -4,6 +4,7 @@ import (
 	"context"
 	"go-price-tracker/internal/bot"
 	"go-price-tracker/internal/config"
+	"go-price-tracker/internal/scraper"
 	"go-price-tracker/internal/service"
 	"go-price-tracker/internal/storage"
 	"log/slog"
@@ -11,8 +12,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 )
 
 func main() {
@@ -41,7 +42,8 @@ func main() {
 	defer db.Close()
 
 	repo := storage.NewRepository(db)
-	trackerService := service.NewTrackerService(repo)
+	webScraper := scraper.NewScraper()
+	trackerService := service.NewTrackerService(repo, webScraper)
 
 	tgBot, err := bot.NewBot(cfg.Telegram.Token, trackerService)
 	if err != nil {
