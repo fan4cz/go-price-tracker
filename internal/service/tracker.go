@@ -29,7 +29,7 @@ func NewTrackerService(repo *storage.Repository, scraper scraper.Scraper) Tracke
 	}
 }
 
-func (s trackerService) TrackProduct(ctx context.Context, userID int64, rawURL string, targetPriceStr string) (decimal.Decimal, error) {
+func (s *trackerService) TrackProduct(ctx context.Context, userID int64, rawURL string, targetPriceStr string) (decimal.Decimal, error) {
 	parsedURL, err := url.ParseRequestURI(rawURL)
 	if err != nil {
 		return decimal.Zero, err
@@ -74,7 +74,7 @@ func (s trackerService) TrackProduct(ctx context.Context, userID int64, rawURL s
 	return curPrice, nil
 }
 
-func (s trackerService) GetUserList(ctx context.Context, userID int64) ([]models.UserSubscription, error) {
+func (s *trackerService) GetUserList(ctx context.Context, userID int64) ([]models.UserSubscription, error) {
 	subs, err := s.repo.GetUserSubscriptions(ctx, userID)
 	if err != nil {
 		return nil, err
