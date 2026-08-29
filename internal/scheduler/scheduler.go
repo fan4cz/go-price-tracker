@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"context"
+	"go-price-tracker/internal/kafka"
+	"go-price-tracker/internal/models"
 	"go-price-tracker/internal/storage"
 	"log/slog"
 	"time"
@@ -14,14 +16,16 @@ type Config struct {
 }
 
 type Scheduler struct {
-	repo *storage.Repository
-	cfg  Config
+	repo     *storage.Repository
+	producer *kafka.Producer
+	cfg      Config
 }
 
-func NewScheduler(repo *storage.Repository, cfg Config) *Scheduler {
+func NewScheduler(repo *storage.Repository, producer *kafka.Producer, cfg Config) *Scheduler {
 	return &Scheduler{
-		repo: repo,
-		cfg:  cfg,
+		repo:     repo,
+		producer: producer,
+		cfg:      cfg,
 	}
 }
 
@@ -61,14 +65,24 @@ func (s *Scheduler) process(ctx context.Context) {
 
 	slog.Info("Найдены товары для обновления", "count", len(products))
 
+	events := make([]models.ScrapeJobEvent, 0, len(products))
 	ids := make([]int, 0, len(products))
-	for _, p := range products {
-		ids = append(ids, p.ID)
 
-		slog.Debug("Сформирована задача на парсинг", "product_id", p.ID, "url", p.URL)
+	for _, p := range products {
+		events = append(events, models.ScrapeJobEvent{
+			ProductID: p.ID,
+			URL:       p.URL,
+			Domain:    p.Domain,
+		})
+		ids = append(ids, p.ID)
+	}
+
+	if err := s.producer.PublishScrapeJobs(ctx, events); err != nil {
+		slog.Error("Не удалось отправить задачи в Kafka", "error", err)
+		return
 	}
 
 	if err := s.repo.MarkProductsAsChecked(ctx, ids); err != nil {
-		slog.Error("Ошибка обновления статуса проверки товаров", "error", err)
+		slog.Error("Ошибка обновления статуса товаров в БД", "error", err)
 	}
 }

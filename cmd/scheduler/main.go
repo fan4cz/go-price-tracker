@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"go-price-tracker/internal/config"
+	"go-price-tracker/internal/kafka"
 	"go-price-tracker/internal/scheduler"
 	"go-price-tracker/internal/storage"
 	"log/slog"
@@ -37,7 +38,10 @@ func main() {
 
 	repo := storage.NewRepository(db)
 
-	sch := scheduler.NewScheduler(repo, scheduler.Config{
+	producer := kafka.NewProducer(cfg.Kafka.Brokers)
+	defer producer.Close()
+
+	sch := scheduler.NewScheduler(repo, producer, scheduler.Config{
 		TickInterval: 30 * time.Second,
 		OutdatedAge:  1 * time.Hour,
 		BatchSize:    50,
