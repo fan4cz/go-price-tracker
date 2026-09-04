@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/shopspring/decimal"
 )
 
 type Repository struct {
@@ -108,5 +109,15 @@ func (r *Repository) MarkProductsAsChecked(ctx context.Context, productIDs []int
 
 	query = r.db.Rebind(query)
 	_, err = r.db.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (r *Repository) UpdateProductPrice(ctx context.Context, productID int, newPrice decimal.Decimal) error {
+	query := `
+		Update products
+		Set current_price = $1
+		Where id = $2
+	`
+	_, err := r.db.ExecContext(ctx, query, productID, newPrice)
 	return err
 }
