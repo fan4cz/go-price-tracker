@@ -88,6 +88,25 @@ services:
     networks:
       - tracker_network
 
+  scraper_worker:
+      build:
+        context: .
+      container_name: tracker_scraper_worker
+      restart: always
+      command: ["sh", "-c", "go build -o worker-app ./cmd/scraper/main.go && ./worker-app"] # Для локальной разработки сойдет такой хак, в проде нужен Multi-stage Dockerfile
+      env_file:
+        - .env
+      environment:
+        - DATABASE_URL=postgres://tracker_user:tracker_password@postgres:5432/price_tracker?sslmode=disable
+        - KAFKA_BROKERS=kafka:9092
+      depends_on:
+        - kafka
+        - postgres
+      networks:
+        - tracker_network
+      deploy:
+        replicas: 1
+
 volumes:
   pgdata:
 
