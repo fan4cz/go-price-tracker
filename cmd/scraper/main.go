@@ -34,10 +34,12 @@ func main() {
 
 	webScraper := scraper.NewScraper()
 
-	consumer := kafka.NewConsumer(cfg.Kafka.Brokers, "scraper_workers_group", kafka.TopicScrapeJobs)
+	consumer := kafka.NewConsumer(cfg.Kafka.Brokers, "scraper_workers_group", "scrape_jobs")
 	defer consumer.Close()
 
-	scraperWorker := worker.NewScraperWorker(consumer, webScraper, repo)
+	profucer := kafka.NewProducer(cfg.Kafka.Brokers, "scrape_jobs")
+
+	scraperWorker := worker.NewScraperWorker(consumer, profucer, webScraper, repo)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

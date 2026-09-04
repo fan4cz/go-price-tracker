@@ -11,16 +11,14 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-const TopicScrapeJobs = "scrape_jobs"
-
 type Producer struct {
 	writer *kafka.Writer
 }
 
-func NewProducer(brokers []string) *Producer {
+func NewProducer(brokers []string, topic string) *Producer {
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(brokers...),
-		Topic:        TopicScrapeJobs,
+		Topic:        topic,
 		Balancer:     &kafka.LeastBytes{},
 		BatchTimeout: 10 * time.Millisecond,
 		RequiredAcks: kafka.RequireOne,
@@ -48,7 +46,20 @@ func (p *Producer) PublishScrapeJobs(ctx context.Context, jobs []models.ScrapeJo
 		return fmt.Errorf("ошибка отправки сообщений в Kafka: %w", err)
 	}
 
-	slog.Info("Задачи успешно отправлены в Kafka", "count", len(messages), "topic", TopicScrapeJobs)
+	slog.Info("Задачи успешно отправлены в Kafka", "count", len(messages), "topic", p.writer.Topic)
+	return nil
+}
+
+func (p *Producer) PublishMessage(ctx context.Context, key []byte, value []byte) error {
+	msg := kafka.Message{
+		Key:   key,
+		Value: value,
+	}
+
+	if err := p.writer.WriteMessages(ctx, msg); err != nil {
+		return fmt.Errorf("ошибка отправки сообщения в Kafka: %w", err)
+	}
+
 	return nil
 }
 

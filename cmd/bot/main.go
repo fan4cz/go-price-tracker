@@ -4,6 +4,7 @@ import (
 	"context"
 	"go-price-tracker/internal/bot"
 	"go-price-tracker/internal/config"
+	"go-price-tracker/internal/kafka"
 	"go-price-tracker/internal/scraper"
 	"go-price-tracker/internal/service"
 	"go-price-tracker/internal/storage"
@@ -44,6 +45,8 @@ func main() {
 	repo := storage.NewRepository(db)
 	webScraper := scraper.NewScraper()
 	trackerService := service.NewTrackerService(repo, webScraper)
+	alertConsumer := kafka.NewConsumer(cfg.Kafka.Brokers, "bot_alerts_group", "alerts")
+	defer alertConsumer.Close()
 
 	tgBot, err := bot.NewBot(cfg.Telegram.Token, trackerService)
 	if err != nil {
@@ -53,6 +56,8 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	go tgBot.StartAlertsListener(ctx)
 
 	if err := tgBot.Start(ctx); err != nil {
 		slog.Error("Критическая ошибка работы бота", "error", err)

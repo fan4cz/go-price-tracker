@@ -2,7 +2,10 @@ package bot
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"go-price-tracker/internal/kafka"
+	"go-price-tracker/internal/models"
 	"go-price-tracker/internal/service"
 	"html"
 	"log/slog"
@@ -16,8 +19,9 @@ import (
 const maxWorkers = 10
 
 type Bot struct {
-	api     *tgbotapi.BotAPI
-	service service.TrackerService
+	api           *tgbotapi.BotAPI
+	service       service.TrackerService
+	alertConsumer *kafka.Consumer
 }
 
 func NewBot(token string, service service.TrackerService) (*Bot, error) {
@@ -176,5 +180,33 @@ func (b *Bot) sendReply(chatID int64, text string) {
 
 	if _, err := b.api.Send(msgConfig); err != nil {
 		slog.Error("Ошибка отправки сообщения в Telegram", "error", err, "chat_id", chatID)
+	}
+}
+
+func (b *Bot) StartAlertsListener(ctx context.Context) {
+	slog.Info("Слушатель уведомлений запущен (топик alerts)")
+
+	for {
+		if ctx.Err() != nil {
+			slog.Info("Остановка слушателя уведомлений...")
+			return
+		}
+
+		payload, err := b.alertConsumer.ReadMessage(ctx)
+		if err != nil {
+			slog.Error("Ошибка чтения алерта", "error", err)
+			continue
+		}
+
+		var alert models.AlertEvent
+		if err := json.Unmarshal(payload, &alert); err != nil {
+			continue
+		}
+		text := fmt.Sprintf(
+			"🎉 *Цена упала!*\n\n🔗 Товар: [Перейти в магазин](%s)\n💵 Текущая цена: `%s`\n🎯 Ваша цель: `%s`",
+			alert.URL, alert.NewPrice, alert.TargetPrice,
+		)
+		b.sendReply(alert.UserID, text)
+		slog.Info("Уведомление доставлено пользователю", "user_id", alert.UserID)
 	}
 }

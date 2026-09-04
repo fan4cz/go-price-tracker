@@ -121,3 +121,15 @@ func (r *Repository) UpdateProductPrice(ctx context.Context, productID int, newP
 	_, err := r.db.ExecContext(ctx, query, productID, newPrice)
 	return err
 }
+
+// get all users with product witch lower then target price
+func (r *Repository) GetSubscriptionsToAlert(ctx context.Context, productID int, newPrice decimal.Decimal) ([]models.Subscription, error) {
+	query := `
+		SELECT user_id, product_id, target_price 
+		FROM subscriptions 
+		WHERE product_id = $1 AND target_price >= $2
+	`
+	var subs []models.Subscription
+	err := r.db.SelectContext(ctx, &subs, query, productID, newPrice)
+	return subs, err
+}

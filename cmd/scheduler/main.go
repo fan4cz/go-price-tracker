@@ -38,7 +38,7 @@ func main() {
 
 	repo := storage.NewRepository(db)
 
-	producer := kafka.NewProducer(cfg.Kafka.Brokers)
+	producer := kafka.NewProducer(cfg.Kafka.Brokers, "scrape_jobs")
 	defer producer.Close()
 
 	sch := scheduler.NewScheduler(repo, producer, scheduler.Config{

@@ -8,17 +8,20 @@ import (
 	"go-price-tracker/internal/scraper"
 	"go-price-tracker/internal/storage"
 	"log/slog"
+	"strconv"
 )
 
 type ScraperWorker struct {
 	consumer *kafka.Consumer
+	producer *kafka.Producer
 	scraper  scraper.Scraper
 	repo     *storage.Repository
 }
 
-func NewScraperWorker(consumer *kafka.Consumer, scr scraper.Scraper, repo *storage.Repository) *ScraperWorker {
+func NewScraperWorker(consumer *kafka.Consumer, producer *kafka.Producer, scr scraper.Scraper, repo *storage.Repository) *ScraperWorker {
 	return &ScraperWorker{
 		consumer: consumer,
+		producer: producer,
 		scraper:  scr,
 		repo:     repo,
 	}
@@ -57,7 +60,30 @@ func (w *ScraperWorker) Start(ctx context.Context) {
 			continue
 		}
 
-		slog.Info("Цена успешно обновлена", "product_id", job.ProductID, "new_price", newPrice.StringFixed(2))
+		subs, err := w.repo.GetSubscriptionsToAlert(ctx, job.ProductID, newPrice)
+		if err != nil || len(subs) == 0 {
+			continue
+		}
+
+		for _, sub := range subs {
+			alert := models.AlertEvent{
+				UserID:      sub.UserID,
+				URL:         job.URL,
+				NewPrice:    newPrice.StringFixed(2),
+				TargetPrice: sub.TargetPrice.StringFixed(2),
+			}
+
+			alertBytes, _ := json.Marshal(alert)
+
+			key := []byte(strconv.FormatInt(sub.UserID, 10))
+
+			err = w.producer.PublishMessage(ctx, key, alertBytes)
+			if err == nil {
+				slog.Info("Уведомление отправлено в очередь", "user", sub.UserID)
+			} else {
+				slog.Error("Не удалось отправить алерт", "error", err, "user_id", sub.UserID)
+			}
+		}
 
 	}
 }
